@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      serviceAccountName: prometheus-exporter-sa  # Correct placement
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.5.1
+        ports:
+        - containerPort: 9200
+          name: http
+        - containerPort: 9300
+          name: transport
+        resources:
+          limits:
+            memory: "6Gi"
+            cpu: "2"
+          requests:
+            memory: "2Gi"
+            cpu: "100m"
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: xpack.security.enabled
+          value: "true"
+        - name: xpack.security.http.ssl.enabled
+          value: "false"
+        - name: ELASTIC_PASSWORD
+          value: "admin@123"
+        volumeMounts:
+        - name: elasticsearch-data
+          mountPath: /usr/share/elasticsearch/data
+
+      - name: prometheus-exporter
+        image: justwatch/elasticsearch_exporter:1.1.0
+        ports:
+        - containerPort: 9108
+          name: metrics
+        env:
+        - name: ES_URI
+          value: "http://prometheus_exporter:Monitor%40123@elasticsearch:9200"
+        - name: ES_USER
+          value: "prometheus_exporter"
+        - name: ES_PASSWORD
+          value: "Monitor@123" 
+        - name: ES_SSL_SKIP_VERIFY
+          value: "true"
+      volumes:
+      - name: elasticsearch-data
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+  - protocol: TCP
+    port: 9200
+    targetPort: 9200
+    name: http
+  - protocol: TCP
+    port: 9300
+    targetPort: 9300
+    name: transport
+  - protocol: TCP
+    port: 9114
+    targetPort: 9114
+    name: metrics
+  type: NodePort
+

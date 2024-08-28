@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+
+    scrape_configs:
+      - job_name: 'kubernetes'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_label_app]
+            action: keep
+            regex: node-exporter
+      - job_name: 'elasticsearch'
+        static_configs:
+          - targets: ['elasticsearch.default.svc.cluster.local:9114']
+        basic_auth:
+            username: 'prometheus_exporter'  # Change this to your Elasticsearch username if different
+            password: 'Monitor@123'  # Change this to your Elasticsearch passwor  d
+

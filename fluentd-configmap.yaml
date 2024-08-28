@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+  namespace: default
+data:
+  fluent.conf: |
+    <source>
+      @type forward
+      @id forward_input
+      port 24224
+      bind 0.0.0.0
+    </source>
+
+    # Dummy log generator to simulate process status
+    <source>
+      @type dummy
+      tag process.status
+      rate 5  # Logs per second
+
+      <format>
+        @type json
+        message {"status":"running","process":"my-app","timestamp":"${time}"}
+      </format>
+    </source>
+
+    <match **>
+      @type elasticsearch
+      @id es_output
+      host elasticsearch.default.svc.cluster.local
+      port 9200
+      logstash_format true
+      logstash_prefix fluentd
+      include_tag_key true
+      tag_key log_name
+      user elastic
+      password admin@123
+      scheme http
+    </match>
+

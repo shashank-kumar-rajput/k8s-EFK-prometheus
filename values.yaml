@@ -1,0 +1,21 @@
+replicas: 1
+elasticsearch.yml:
+  xpack.security.enrollment.enabled: true
+readinessProbe:
+  exec: 
+    command: []  # empty command effectively disables the probe
+  initialDelaySeconds: 0
+  periodSeconds: 0
+  timeoutSeconds: 0
+  successThreshold: 1
+  failureThreshold: 1
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "2Gi"    # Increase the memory request to 2Gi
+  limits:
+    cpu: "2000m"
+    memory: "6Gi"    # Increase the memory limit to 6Gi
+
+esJavaOpts: "-Xmx512m -Xms512m"
